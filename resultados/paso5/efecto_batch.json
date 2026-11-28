@@ -1,0 +1,50 @@
+{
+  "modelo": "resnet50-res512-all",
+  "device": "cpu",
+  "env": {
+    "python": "3.12.4",
+    "torch": "2.15.0+cpu",
+    "torchxrayvision": "1.5.7",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 23 Model 24 Stepping 1, AuthenticAMD",
+    "cpu_threads": 8,
+    "device": "cpu",
+    "gpu": null,
+    "cuda": null,
+    "cudnn": null
+  },
+  "semilla": 0,
+  "n_perm": 1000,
+  "n_pca": 50,
+  "n_por_dominio": 202,
+  "comparaciones": {
+    "hospital": {
+      "auc_dominio": 1.0,
+      "accuracy": 0.9975247524752475,
+      "silhouette": 0.25294697284698486,
+      "auc_perm_media": 0.4986913782962455,
+      "auc_perm_p95": 0.5592613469267719,
+      "p_valor": 0.000999000999000999,
+      "dominios": [
+        "NIH 320 px",
+        "CheXpert 320 px"
+      ],
+      "n_a": 202,
+      "n_b": 202
+    },
+    "resolucion": {
+      "auc_dominio": 0.996593471228311,
+      "accuracy": 0.9653465346534653,
+      "silhouette": 0.06241386756300926,
+      "auc_perm_media": 0.4977132388981472,
+      "auc_perm_p95": 0.5618922164493676,
+      "p_valor": 0.000999000999000999,
+      "dominios": [
+        "NIH 512 px",
+        "NIH 320 px"
+      ],
+      "n_a": 202,
+      "n_b": 202
+    }
+  }
+}

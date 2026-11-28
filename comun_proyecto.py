@@ -17,12 +17,16 @@ from scipy.stats import spearmanr
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.abspath(os.path.join(AQUI, ".."))
-for p in (RAIZ, os.path.join(RAIZ, "benchmarks")):
+for p in (AQUI, RAIZ, os.path.join(RAIZ, "benchmarks")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
 import torchxrayvision as xrv  # noqa: E402  (la librería de esta carpeta)
-import common as bench  # noqa: E402  (benchmarks/common.py: carga de modelos, corrección de subnormales)
+try:
+    import common as bench  # noqa: E402  (benchmarks/common.py del repo original)
+    _ = bench.load_model
+except (ModuleNotFoundError, AttributeError):
+    import bench_compat as bench  # noqa: E402  (sustituto local incluido en el proyecto)
 
 # Las 7 patologías que existen en NIH y en CheXpert
 COMUNES = ["Atelectasis", "Cardiomegaly", "Consolidation", "Edema",
@@ -124,6 +128,30 @@ def predecir(modelo, dataset, device, bs=32, workers=4, amp=True):
                 y = modelo(x)
             salidas.append(y.float().cpu())
     return torch.cat(salidas).numpy(), time.perf_counter() - t0
+
+
+@torch.no_grad()
+def extraer_embeddings(modelo, dataset, device, bs=32, workers=4, amp=True):
+    """Vector de características de 2048 dims (penúltima capa de ResNet-50).
+
+    Usa `modelo.features()`, que ya aplica avgpool y aplana, así que no hace
+    falta registrar un forward hook. Pensado para los modelos ResNet de
+    TorchXRayVision (p. ej. resnet50-res512-all, cuya `features` trabaja a 512).
+    Devuelve una matriz float32 de forma [n_imagenes, 2048].
+    """
+    if not hasattr(modelo, "features"):
+        raise AttributeError("extraer_embeddings requiere un modelo con .features() (ResNet de TorchXRayVision)")
+    dl = torch.utils.data.DataLoader(dataset, batch_size=bs, num_workers=workers, shuffle=False,
+                                     pin_memory=str(device).startswith("cuda"))
+    salidas = []
+    usar_amp = amp and str(device).startswith("cuda")
+    with bench.quiet():
+        for lote in dl:
+            x = lote["img"].to(device).float()
+            with torch.autocast("cuda", dtype=torch.float16, enabled=usar_amp):
+                e = modelo.features(x)
+            salidas.append(e.float().cpu().numpy())
+    return np.vstack(salidas)
 
 
 def decisiones(probs, umbrales):
